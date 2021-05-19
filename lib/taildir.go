@@ -54,6 +54,16 @@ type DirReader struct {
 }
 
 func (d *DirReader) Read(b []byte) (n int, err error) {
+	for {
+		n, err = d.read(b)
+		if err != nil || n > 0 {
+			return
+		}
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
+func (d *DirReader) read(b []byte) (n int, err error) {
 	d.once.Do(func() { err = d.openFirstFile() })
 	if err != nil {
 		return
