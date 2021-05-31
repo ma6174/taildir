@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (d *DirReader) getNextFiles(currentFile string) (file string, err error) {
+func (d *DirReader) getNextFiles(currentFile *os.File) (file string, err error) {
 	fileDirs, err := ioutil.ReadDir(d.conf.Dir)
 	if err != nil {
 		log.Printf("ReadDir failed %v %v", err, d.conf.Dir)
@@ -31,10 +31,10 @@ func (d *DirReader) getNextFiles(currentFile string) (file string, err error) {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
-	if currentFile == "" {
+	if currentFile == nil {
 		return filepath.Join(d.conf.Dir, files[0].Name()), nil
 	}
-	fi, err := os.Stat(currentFile)
+	fi, err := currentFile.Stat()
 	if err != nil {
 		log.Printf("Stat file failed %v %v", err, currentFile)
 		return
@@ -72,7 +72,7 @@ func (d *DirReader) read(b []byte) (n int, err error) {
 	if err == nil || err != io.EOF {
 		return
 	}
-	next, err := d.getNextFiles(d.f.Name())
+	next, err := d.getNextFiles(d.f)
 	if err != nil {
 		return
 	}
@@ -98,7 +98,7 @@ func (d *DirReader) read(b []byte) (n int, err error) {
 func (d *DirReader) openFirstFile() (err error) {
 	for {
 		var firstFileInDir bool
-		fn, err := d.getNextFiles("")
+		fn, err := d.getNextFiles(nil)
 		if err != nil {
 			return err
 		}
